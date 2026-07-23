@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Word Café — Hangman</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..900,0..100;1,9..144,400..900,0..100&family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --espresso: #241610;
+    --espresso-2: #33221a;
+    --kraft: #f2e5cc;
+    --kraft-2: #eadcbf;
+    --cream: #fbf5e4;
+    --caramel: #c08850;
+    --caramel-dark: #8f5f2e;
+    --coffee: #3d2416;
+    --crema: #c9955f;
+    --matcha: #6b8e4e;
+    --berry: #8b2635;
+    --ink: #241610;
+    --ink-dim: rgba(36, 22, 16, 0.58);
+    --ink-faint: rgba(36, 22, 16, 0.28);
+  }
+  *{ box-sizing:border-box; }
+  html, body{ height:100%; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background: var(--espresso);
+    background-image:
+      radial-gradient(ellipse at top, rgba(192,136,80,0.08), transparent 55%),
+      radial-gradient(ellipse at bottom, rgba(0,0,0,0.35), transparent 60%);
+    color: var(--kraft);
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  .shell{ max-width: 940px; margin: 0 auto; padding: 34px 18px 60px; min-height: 100vh; }
+
+  .screen{ display:none; animation: fadein .5s ease; }
+  .screen.active{ display:block; }
+  @keyframes fadein{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes pop{ 0%{ transform:scale(0.4); opacity:0; } 60%{ transform:scale(1.15); opacity:1; } 100%{ transform:scale(1); opacity:1; } }
+  @keyframes shudder{ 0%,100%{ transform:translate(0,0); } 25%{ transform:translate(-3px, 1px); } 50%{ transform:translate(3px, -1px); } 75%{ transform:translate(-2px, 1px); } }
+  @keyframes drip{ 0%{ opacity:0; transform:translateY(-6px); } 30%{ opacity:1; } 100%{ opacity:0.9; transform:translateY(20px); } }
+  @keyframes steam{ 0%{ opacity:0; transform:translateY(0) scale(1); } 40%{ opacity:0.75; } 100%{ opacity:0; transform:translateY(-40px) scale(1.2); } }
+  @keyframes fall{ to{ transform: translateY(105vh) rotate(720deg); opacity:.85; } }
+  @keyframes score-bump{ 0%{ transform:scale(1); } 50%{ transform:scale(1.25); color: var(--matcha); } 100%{ transform:scale(1); } }
+
+  .display{
+    font-family: 'Fraunces', 'Times New Roman', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 100;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .script{ font-family: 'Caveat', cursive; font-weight: 700; }
+  .eyebrow{
+    font-size: 11px; font-weight: 600; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--caramel);
+  }
+  .eyebrow::before, .eyebrow::after{
+    content: ''; display:inline-block; width: 24px; height: 1px;
+    background: var(--caramel); vertical-align: middle;
+    margin: 0 10px 3px; opacity: 0.5;
+  }
+
+  /* START */
+  .hero{ display: grid; grid-template-columns: 1.25fr 1fr; gap: 40px; align-items: center; padding-top: 40px; }
+  .hero-text .brand{ font-size: clamp(56px, 10vw, 96px); font-weight: 900; color: var(--cream); margin: 14px 0 6px; }
+  .hero-text .brand em{ font-style: italic; font-variation-settings: 'opsz' 144, 'SOFT' 100, 'wght' 500; color: var(--caramel); }
+  .hero-text .tagline{ font-size: 26px; color: var(--kraft); opacity: 0.85; margin: 0 0 22px; transform: rotate(-1.5deg); transform-origin: left; }
+  .hero-text .lede{ color: var(--kraft); opacity: 0.7; font-size: 15.5px; line-height: 1.65; max-width: 440px; margin: 0 0 26px; }
+  .hero-cup{ display: flex; justify-content: center; align-items: flex-end; }
+  .hero-cup svg{ width: 100%; max-width: 320px; height: auto; overflow: visible; }
+
+  .page-head{
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 18px; margin-bottom: 26px;
+    border-bottom: 1px dashed rgba(242, 229, 204, 0.2);
+    gap: 20px; flex-wrap: wrap;
+  }
+  .page-head h2{
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'SOFT' 100;
+    font-weight: 700; color: var(--cream);
+    font-size: clamp(32px, 5vw, 44px); margin: 0; letter-spacing: -0.01em;
+  }
+  .page-head h2 em{ font-style: italic; color: var(--caramel); font-weight: 500; }
+  .page-head .step{ font-size: 11px; letter-spacing: 0.22em; color: var(--caramel); text-transform: uppercase; }
+
+  /* AVATARS */
+  .avatar-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .avatar-card{
+    background: var(--kraft); color: var(--ink);
+    border-radius: 14px; padding: 18px 14px 16px; text-align: center; cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+    box-shadow: 0 3px 0 var(--caramel-dark), 0 12px 24px -14px rgba(0,0,0,0.5);
+  }
+  .avatar-card:hover{ transform: translateY(-3px); }
+  .avatar-card.selected{ box-shadow: 0 3px 0 var(--caramel-dark), 0 0 0 3px var(--caramel) inset, 0 12px 24px -14px rgba(0,0,0,0.5); }
+  .avatar-card img{ width: 100px; height: 100px; display: block; margin: 0 auto 10px; border-radius: 50%; background: var(--cream); }
+  .avatar-card .role{ font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'SOFT' 100; font-weight: 700; font-size: 17px; margin: 0 0 2px; }
+  .avatar-card .note{ font-family: 'Caveat', cursive; font-size: 15px; color: var(--caramel-dark); margin: 0; }
+
+  /* MENU */
+  .menu-list{
+    background: var(--kraft); color: var(--ink);
+    border-radius: 16px; padding: 28px 24px; margin-bottom: 24px;
+    box-shadow: 0 12px 30px -18px rgba(0,0,0,0.6);
+  }
+  .menu-heading{
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 12px; margin-bottom: 8px;
+    border-bottom: 2px solid var(--ink);
+    gap: 12px; flex-wrap: wrap;
+  }
+  .menu-heading .name{ font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'SOFT' 100; font-weight: 900; font-size: 22px; letter-spacing: 0.02em; text-transform: uppercase; }
+  .menu-heading .date{ font-family: 'Caveat', cursive; font-size: 20px; color: var(--caramel-dark); }
+  .menu-item{
+    display: grid; grid-template-columns: 40px 1fr auto; gap: 14px; align-items: center;
+    padding: 16px 4px; border-bottom: 1px dashed var(--ink-faint);
+    cursor: pointer; transition: background .15s ease; border-radius: 6px;
+  }
+  .menu-item:last-child{ border-bottom: none; }
+  .menu-item:hover{ background: rgba(192, 136, 80, 0.12); }
+  .menu-item .num{ font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'SOFT' 100; font-weight: 900; font-size: 26px; color: var(--caramel); font-style: italic; }
+  .menu-item .body h3{ font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'SOFT' 100; font-weight: 700; font-size: 20px; margin: 0 0 3px; }
+  .menu-item .body p{ margin: 0; font-size: 13.5px; color: var(--ink-dim); line-height: 1.4; }
+  .menu-item .count{ font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: var(--ink-dim); text-transform: uppercase; white-space: nowrap; }
+  .menu-item.special .body h3::after{
+    content: 'chef’s special'; font-family: 'Caveat', cursive; font-size: 15px;
+    color: var(--berry); margin-left: 10px; letter-spacing: 0; text-transform: none; font-weight: 700;
+  }
+
+  /* BUTTONS */
+  .btn{
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14.5px; letter-spacing: 0.02em;
+    color: var(--espresso); background: var(--caramel);
+    border: none; padding: 13px 24px; border-radius: 999px; cursor: pointer;
+    transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    box-shadow: 0 3px 0 var(--caramel-dark);
+  }
+  .btn:hover{ background: #d19b63; transform: translateY(-1px); }
+  .btn:active{ transform: translateY(2px); box-shadow: 0 1px 0 var(--caramel-dark); }
+  .btn:disabled{ opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; }
+  .btn.ghost{ background: transparent; color: var(--kraft); border: 1px solid rgba(242, 229, 204, 0.35); box-shadow: none; }
+  .btn.ghost:hover{ border-color: var(--caramel); color: var(--cream); background: rgba(192, 136, 80, 0.08); }
+  .btn.ghost.dark{ color: var(--ink); border-color: var(--ink-faint); }
+  .btn.ghost.dark:hover{ background: rgba(36, 22, 16, 0.05); }
+  .actions{ display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+  /* RECEIPT */
+  .receipt{
+    background: var(--cream); color: var(--ink);
+    padding: 20px 22px 18px;
+    border-radius: 4px; margin-bottom: 32px;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 12.5px; line-height: 1.7;
+    box-shadow: 0 12px 24px -14px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .receipt::before, .receipt::after{
+    content: ''; position: absolute; left: 0; right: 0; height: 8px;
+    background: radial-gradient(circle at 4px 8px, transparent 4px, var(--cream) 5px) 0 0/8px 8px repeat-x;
+  }
+  .receipt::before{ top: -8px; }
+  .receipt::after{ bottom: -8px; transform: scaleY(-1); }
+  .receipt .r-title{
+    text-align: center;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 100;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 0.32em;
+    padding-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .receipt .r-score{
+    text-align: center;
+    padding: 6px 0 14px;
+    border-top: 1px dashed var(--ink-faint);
+    border-bottom: 1px dashed var(--ink-faint);
+    margin-bottom: 12px;
+  }
+  .receipt .r-score-label{
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 100;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 6px 0 0;
+  }
+  .receipt .r-score-value{
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 100, 'wght' 900;
+    font-style: italic;
+    font-size: 56px;
+    line-height: 1;
+    color: var(--caramel);
+    margin: 4px 0 6px;
+    display: inline-block;
+  }
+  .receipt .r-score-value.bump{ animation: score-bump 0.5s ease; }
+  .receipt .r-score-sub{
+    font-size: 11px; color: var(--ink-dim); letter-spacing: 0.08em;
+  }
+  .receipt .r-score-sub b{ color: var(--caramel-dark); font-weight: 700; }
+  .receipt .r-row{ display: flex; justify-content: space-between; gap: 12px; }
+  .receipt .r-row .k{ color: var(--ink-dim); }
+  .receipt .r-actions{ margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--ink-faint); text-align: right; }
+  .receipt-btn{
+    background: none; border: none; padding: 0;
+    font-family: inherit; font-size: inherit;
+    color: var(--caramel-dark); cursor: pointer;
+    text-decoration: underline; text-decoration-style: dotted;
+  }
+  .receipt-btn:hover{ color: var(--berry); }
+
+  /* BOARD */
+  .board{
+    background: var(--kraft); color: var(--ink);
+    border-radius: 16px; padding: 26px 22px 22px; margin-bottom: 22px;
+    box-shadow: 0 12px 30px -18px rgba(0,0,0,0.6);
+    display: grid; grid-template-columns: 260px 1fr; gap: 26px; align-items: center;
+  }
+  @media (max-width: 720px){
+    .board{ grid-template-columns: 1fr; }
+    .hero{ grid-template-columns: 1fr; padding-top: 10px; }
+    .hero-cup{ order: -1; }
+    .hero-cup svg{ max-width: 200px; }
+  }
+  .cup-wrap{ display: flex; justify-content: center; }
+  .cup-wrap svg{ width: 100%; max-width: 230px; height: auto; overflow: visible; }
+  .cup-wrap.trembling{ animation: shudder 0.4s ease infinite; }
+
+  /* WORD AREA */
+  .word-area .clue-eyebrow{ font-size: 10.5px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--caramel-dark); margin: 0 0 4px; }
+  .word-area .clue-line{
+    font-family: 'Caveat', cursive; font-size: 22px; color: var(--ink);
+    margin: 0 0 18px; min-height: 28px; line-height: 1.15;
+  }
+  .word-area .clue-line.hidden{ color: var(--ink-faint); font-style: italic; font-size: 18px; }
+  .blanks{ display: flex; flex-wrap: wrap; gap: 10px 12px; margin-bottom: 16px; }
+  .letter{
+    position: relative; width: 38px; height: 60px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 100, 'wght' 800;
+    font-size: 42px; color: var(--ink); line-height: 1;
+  }
+  .letter.blank{ color: transparent; }
+  .letter::after{
+    content: ''; position: absolute;
+    left: 10%; right: 10%; bottom: 4px; height: 12px;
+    border: 2.5px solid var(--caramel); border-top: none;
+    border-radius: 0 0 100% 100% / 0 0 100% 100%;
+  }
+  .letter.revealed{ animation: pop 0.35s ease; }
+  .letter.space::after{ display: none; }
+  .toolbar{ display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 4px; }
+  .status{ font-size: 12.5px; color: var(--ink-dim); margin: 0; min-height: 18px; }
+  .status.good{ color: var(--matcha); }
+  .status.bad{ color: var(--berry); }
+
+  /* KEYBOARD */
+  .keyboard{ display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 8px; }
+  .krow{ display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; }
+  .key{
+    width: 40px; height: 50px; border-radius: 8px;
+    border: 1px solid rgba(242, 229, 204, 0.18);
+    background: var(--kraft); color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-variation-settings: 'opsz' 144, 'SOFT' 100, 'wght' 700;
+    font-size: 22px; cursor: pointer;
+    transition: transform .1s ease, background .15s ease, color .15s ease, border-color .15s ease;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.35); padding: 0;
+  }
+  .key:hover:not(:disabled){ transform: translateY(-2px); background: var(--cream); }
+  .key:active{ transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,0.35); }
+  .key:disabled{ cursor: not-allowed; }
+  .key.correct{ background: var(--matcha); color: var(--cream); border-color: var(--matcha); box-shadow: 0 2px 0 #4d6a37; }
+  .key.wrong{ background: var(--berry); color: var(--cream); border-color: var(--berry); box-shadow: 0 2px 0 #661a26; opacity: 0.85; }
+
+  @media (max-width: 480px){
+    .key{ width: 30px; height: 42px; font-size: 17px; }
+    .letter{ width: 28px; height: 46px; font-size: 30px; }
+    .letter::after{ height: 8px; bottom: 3px; }
+    .avatar-card img{ width: 80px; height: 80px; }
+    .receipt .r-score-value{ font-size: 46px; }
+  }
+
+  /* OVERLAY */
+  .overlay{
+    position: fixed; inset: 0; background: rgba(23, 14, 10, 0.78);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px; z-index: 20; backdrop-filter: blur(3px);
+  }
+  .overlay.active{ display: flex; }
+  .overlay-card{
+    background: var(--kraft); color: var(--ink);
+    max-width: 440px; width: 100%;
+    padding: 32px 28px 26px; border-radius: 16px; text-align: center;
+    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.7);
+  }
+  .overlay-title{
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'SOFT' 100;
+    font-weight: 900; font-size: 32px; margin: 12px 0 6px; letter-spacing: -0.01em;
+  }
+  .overlay-title.win{ color: var(--matcha); }
+  .overlay-title.lose{ color: var(--berry); }
+  .overlay-word{
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'SOFT' 100;
+    font-weight: 800; font-size: 26px; letter-spacing: 0.08em;
+    color: var(--caramel-dark); margin: 10px 0 4px;
+  }
+  .overlay-ex{ font-family: 'Caveat', cursive; font-size: 20px; color: var(--ink-dim); margin: 0 0 20px; line-height: 1.2; }
+  .overlay-mark{
+    width: 46px; height: 46px; margin: 0 auto; border-radius: 50%;
+    background: var(--caramel); color: var(--cream);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-variation-settings: 'opsz' 144, 'SOFT' 100, 'wght' 900;
+    font-size: 26px; font-style: italic;
+  }
+  .overlay-actions{ display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  .bean{
+    position: fixed; top: -20px;
+    width: 10px; height: 14px;
+    border-radius: 6px 6px 8px 8px / 8px 8px 10px 10px;
+    background: var(--coffee); z-index: 30; pointer-events: none;
+    animation: fall linear forwards;
+  }
+  .bean::before{ content:''; position: absolute; inset: 2px 4px; background: var(--caramel-dark); border-radius: 4px; }
+
+  .foot{
+    text-align: center; color: rgba(242, 229, 204, 0.35);
+    font-size: 11px; letter-spacing: 0.14em; margin-top: 40px; text-transform: uppercase;
+  }
+  .foot .divider{ margin: 0 8px; opacity: 0.6; }
+
+  .load-note{
+    margin-top: 24px; font-family: 'Caveat', cursive;
+    font-size: 16px; color: rgba(242, 229, 204, 0.5);
+    max-width: 500px; line-height: 1.3;
+  }
+</style>
+</head>
+<body>
+
+<!-- COFFEE CUP TEMPLATE -->
+<template id="cup-template">
+  <svg viewBox="0 0 260 280" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <clipPath id="cup-inside">
+        <path d="M 60 78 L 200 78 L 188 200 L 72 200 Z" />
+      </clipPath>
+      <linearGradient id="coffee-grad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#5a3520"/>
+        <stop offset="0.5" stop-color="#3d2416"/>
+        <stop offset="1" stop-color="#1e100a"/>
+      </linearGradient>
+      <radialGradient id="warm-halo" cx="0.5" cy="0.55" r="0.65">
+        <stop offset="0" stop-color="#c08850" stop-opacity="0.28"/>
+        <stop offset="1" stop-color="#c08850" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="cup-shine" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+        <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+
+    <!-- warm halo behind the cup -->
+    <ellipse cx="130" cy="145" rx="135" ry="95" fill="url(#warm-halo)"/>
+
+    <!-- steam wisps -->
+    <g class="steam-group">
+      <path class="steam s1" d="M 100 60 C 92 45, 108 35, 100 20 C 92 8, 108 0, 100 -8" stroke="#fbf5e4" stroke-width="5.5" fill="none" stroke-linecap="round" opacity="0"/>
+      <path class="steam s2" d="M 130 55 C 122 40, 138 30, 130 15 C 122 3, 138 -5, 130 -13" stroke="#fbf5e4" stroke-width="6" fill="none" stroke-linecap="round" opacity="0"/>
+      <path class="steam s3" d="M 160 60 C 152 45, 168 35, 160 20 C 152 8, 168 0, 160 -8" stroke="#fbf5e4" stroke-width="5.5" fill="none" stroke-linecap="round" opacity="0"/>
+      <path class="steam s4" d="M 115 65 C 108 50, 122 40, 115 25 C 108 12, 122 4, 115 -4" stroke="#fbf5e4" stroke-width="4.5" fill="none" stroke-linecap="round" opacity="0"/>
+      <path class="steam s5" d="M 145 65 C 138 50, 152 40, 145 25 C 138 12, 152 4, 145 -4" stroke="#fbf5e4" stroke-width="4.5" fill="none" stroke-linecap="round" opacity="0"/>
+    </g>
+
+    <!-- saucer -->
+    <ellipse cx="130" cy="235" rx="105" ry="16" fill="#33221a"/>
+    <ellipse cx="130" cy="228" rx="105" ry="14" fill="#f4ebd9" stroke="#8f5f2e" stroke-width="2"/>
+    <ellipse cx="130" cy="225" rx="70" ry="8" fill="#eadcbf" stroke="#8f5f2e" stroke-width="1.5"/>
+
+    <!-- handle -->
+    <path d="M 195 110 C 235 115, 240 175, 190 180" fill="none" stroke="#8f5f2e" stroke-width="10" stroke-linecap="round"/>
+    <path d="M 195 110 C 235 115, 240 175, 190 180" fill="none" stroke="#f4ebd9" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- cup body -->
+    <path d="M 55 78 C 55 78, 62 200, 72 215 C 90 225, 170 225, 188 215 C 198 200, 205 78, 205 78 Z" fill="#f4ebd9" stroke="#8f5f2e" stroke-width="3"/>
+
+    <!-- COFFEE (clipped) -->
+    <g clip-path="url(#cup-inside)">
+      <rect class="coffee-fill" x="55" y="200" width="155" height="140" fill="url(#coffee-grad)"/>
+      <!-- cream crema/foam top layer -->
+      <ellipse class="coffee-foam" cx="130" cy="200" rx="68" ry="3" fill="#fbf5e4" opacity="0.92"/>
+      <!-- surface ripple when nearly full -->
+      <g class="latte-art" opacity="0">
+        <ellipse cx="130" cy="200" rx="42" ry="1.8" fill="#fbf5e4" opacity="0.55"/>
+        <ellipse cx="130" cy="200" rx="18" ry="1.2" fill="#fbf5e4" opacity="0.85"/>
+      </g>
+    </g>
+
+    <!-- rim -->
+    <ellipse cx="130" cy="78" rx="75" ry="10" fill="#e8d9bc" stroke="#8f5f2e" stroke-width="3"/>
+    <ellipse cx="130" cy="78" rx="70" ry="7" fill="none" stroke="#8f5f2e" stroke-width="1"/>
+
+    <!-- shine on the cup body -->
+    <path d="M 68 100 C 65 130, 68 170, 72 200" stroke="url(#cup-shine)" stroke-width="6" fill="none" opacity="0.7"/>
+
+    <!-- overflow drips (coffee) -->
+    <g class="drips">
+      <path class="drip d1" d="M 62 90 Q 60 120, 65 145 Q 68 158, 60 175" stroke="#3d2416" stroke-width="6" fill="none" stroke-linecap="round" opacity="0"/>
+      <path class="drip d2" d="M 198 90 Q 200 120, 195 145 Q 192 158, 200 175" stroke="#3d2416" stroke-width="6" fill="none" stroke-linecap="round" opacity="0"/>
+      <circle class="drip d3" cx="65" cy="185" r="5" fill="#3d2416" opacity="0"/>
+      <circle class="drip d4" cx="200" cy="185" r="4" fill="#3d2416" opacity="0"/>
+    </g>
+  </svg>
+</template>
+
+<div class="shell">
+
+  <!-- START -->
+  <section class="screen active" id="screen-start">
+    <div class="hero">
+      <div class="hero-text">
+        <span class="eyebrow">Est. 2026 — Open Late</span>
+        <h1 class="brand display">The Word<br><em>Café</em></h1>
+        <p class="tagline script">a hangman, done properly</p>
+        <p class="lede">Order a topic, pick a regular from the counter, and guess the word one letter at a time — before your cup overflows.</p>
+        <div class="actions">
+          <button class="btn" id="btn-start">Take a seat →</button>
+        </div>
+      </div>
+      <div class="hero-cup" id="hero-cup"></div>
+    </div>
+    <p class="load-note" id="load-note"></p>
+  </section>
+
+  <!-- AVATAR -->
+  <section class="screen" id="screen-avatar">
+    <div class="page-head">
+      <h2 class="display">Who’s <em>ordering?</em></h2>
+      <span class="step">Step 01 / 02</span>
+    </div>
+    <div class="avatar-grid" id="avatar-grid"></div>
+    <div class="actions">
+      <button class="btn ghost" id="btn-avatar-back">← Back</button>
+      <button class="btn" id="btn-avatar-next" disabled>Take me to the menu →</button>
+    </div>
+  </section>
+
+  <!-- CATEGORY -->
+  <section class="screen" id="screen-category">
+    <div class="page-head">
+      <h2 class="display">Today’s <em>menu</em></h2>
+      <span class="step">Step 02 / 02</span>
+    </div>
+    <div class="menu-list">
+      <div class="menu-heading">
+        <span class="name">The Word Café — Menu</span>
+        <span class="date" id="menu-date"></span>
+      </div>
+      <div id="cat-list"></div>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="btn-cat-back">← Back</button>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section class="screen" id="screen-game">
+    <div class="receipt">
+      <div class="r-title">◆ The Word Café ◆</div>
+      <div class="r-score">
+        <div class="r-score-value" id="r-score">0</div>
+        <div class="r-score-label">Score</div>
+        <div class="r-score-sub">streak <b id="r-streak">0</b> · order <b id="r-order">001</b></div>
+      </div>
+      <div class="r-row"><span class="k">regular</span><span id="r-player">—</span></div>
+      <div class="r-row"><span class="k">menu</span><span id="r-menu">—</span></div>
+      <div class="r-actions">
+        <button class="receipt-btn" id="btn-restart-run">↺ start a new tab</button>
+      </div>
+    </div>
+
+    <div class="board">
+      <div class="cup-wrap" id="cup-wrap"></div>
+      <div class="word-area">
+        <p class="clue-eyebrow">Hint</p>
+        <p class="clue-line hidden" id="clue-line">— tap “reveal hint” to see the meaning —</p>
+        <div class="blanks" id="blanks"></div>
+        <p class="status" id="status">Guess a letter to begin.</p>
+        <div class="toolbar">
+          <button class="btn ghost dark" id="btn-hint" style="padding: 9px 18px; font-size: 13px;">Reveal hint</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="keyboard" id="keyboard"></div>
+  </section>
+
+  <footer class="foot">The Word Café <span class="divider">·</span> No beans were harmed <span class="divider">·</span> Refills always free</footer>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <div class="overlay-mark" id="ov-mark">A</div>
+    <h2 class="overlay-title" id="ov-title">Order up!</h2>
+    <div class="overlay-word display" id="ov-word"></div>
+    <p class="overlay-ex" id="ov-ex"></p>
+    <div class="overlay-actions">
+      <button class="btn" id="btn-next-word">Next word →</button>
+      <button class="btn ghost dark" id="btn-change-cat">Change order</button>
+    </div>
+  </div>
+</div>
+
+<!-- FULL WORD DATA (used if words.json can't be fetched) -->
+<script id="fallback-json" type="application/json">
+{
+  "general": {"label":"General Knowledge","sub":"Fun everyday words for kids.","icon":"🧠","words":[
+    {"word":"SUN","clue":"The bright star at the center of our solar system."},
+    {"word":"MOON","clue":"The rocky body that orbits Earth and glows at night."},
+    {"word":"RAINBOW","clue":"A colorful arc of light that appears after rain."},
+    {"word":"VOLCANO","clue":"A mountain that can erupt with hot lava."},
+    {"word":"DINOSAUR","clue":"A giant reptile that lived millions of years ago."},
+    {"word":"ROBOT","clue":"A machine that can be programmed to do tasks."},
+    {"word":"PLANET","clue":"A large round body that orbits a star."},
+    {"word":"LIBRARY","clue":"A building full of books you can borrow."},
+    {"word":"TELESCOPE","clue":"A tool used to look at faraway stars and planets."},
+    {"word":"COMPUTER","clue":"A machine you use to type, play, and browse."},
+    {"word":"GUITAR","clue":"A musical instrument with strings you strum."},
+    {"word":"BICYCLE","clue":"A two-wheeled ride you pedal to move."},
+    {"word":"OCEAN","clue":"A huge body of salt water."},
+    {"word":"ASTRONAUT","clue":"A person trained to travel into space."},
+    {"word":"MAGNET","clue":"An object that pulls certain metals toward it."},
+    {"word":"MOUNTAIN","clue":"A very large, tall natural landform of rock."},
+    {"word":"RIVER","clue":"A long stream of flowing water."},
+    {"word":"BUTTERFLY","clue":"An insect with large, colorful wings."},
+    {"word":"ISLAND","clue":"A piece of land surrounded by water on all sides."},
+    {"word":"DESERT","clue":"A dry, sandy place with very little rain."},
+    {"word":"LIGHTNING","clue":"A bright flash of electricity in the sky."},
+    {"word":"FOREST","clue":"A large area densely covered with trees."},
+    {"word":"CASTLE","clue":"A large stone fortress from long ago."},
+    {"word":"WHEEL","clue":"A round object that turns to help things move."},
+    {"word":"CLOCK","clue":"A device that shows the time."},
+    {"word":"CAMERA","clue":"A device used to take pictures."},
+    {"word":"HELICOPTER","clue":"A flying machine with spinning blades on top."},
+    {"word":"SUBMARINE","clue":"A vessel that can travel underwater."},
+    {"word":"COMPASS","clue":"A tool that shows which direction is north."},
+    {"word":"SNOWFLAKE","clue":"A tiny piece of frozen water that falls from the sky."}
+  ]},
+  "countries": {"label":"Countries","sub":"Explore the map, one word at a time.","icon":"🌍","words":[
+    {"word":"CANADA","clue":"Known for maple syrup and long winters."},
+    {"word":"BRAZIL","clue":"Home to the Amazon rainforest."},
+    {"word":"JAPAN","clue":"An island nation famous for cherry blossoms."},
+    {"word":"EGYPT","clue":"Home to ancient pyramids along the Nile."},
+    {"word":"FRANCE","clue":"Known for the Eiffel Tower."},
+    {"word":"AUSTRALIA","clue":"A country and continent home to kangaroos."},
+    {"word":"MEXICO","clue":"Famous for tacos and its own ancient pyramids."},
+    {"word":"ITALY","clue":"Shaped like a boot, famous for pasta."},
+    {"word":"GERMANY","clue":"Known for castles and the Autobahn."},
+    {"word":"INDIA","clue":"Home of the Taj Mahal."},
+    {"word":"KENYA","clue":"East African nation known for safaris."},
+    {"word":"NORWAY","clue":"Land of fjords and the midnight sun."},
+    {"word":"THAILAND","clue":"Known as the Land of Smiles."},
+    {"word":"ARGENTINA","clue":"Famous for tango and vast grasslands."},
+    {"word":"SPAIN","clue":"Known for flamenco and paella."},
+    {"word":"GREECE","clue":"Ancient home of the Olympics and mythology."},
+    {"word":"CHINA","clue":"Home of the Great Wall, one of the world's largest countries."},
+    {"word":"MOROCCO","clue":"A North African country famous for colorful markets."},
+    {"word":"ICELAND","clue":"Nordic island known for volcanoes and hot springs."},
+    {"word":"PERU","clue":"South American country home to Machu Picchu."},
+    {"word":"VIETNAM","clue":"Southeast Asian nation famous for pho."},
+    {"word":"SWEDEN","clue":"Scandinavian country home to IKEA."},
+    {"word":"NEPAL","clue":"Himalayan country home to Mount Everest."},
+    {"word":"IRELAND","clue":"Emerald Isle known for green hills and folklore."},
+    {"word":"TURKEY","clue":"A country that spans both Europe and Asia."},
+    {"word":"PORTUGAL","clue":"European country famous for sailors and pastel de nata."},
+    {"word":"SWITZERLAND","clue":"Alpine country famous for chocolate and watches."},
+    {"word":"COLOMBIA","clue":"South American country famous for coffee."},
+    {"word":"INDONESIA","clue":"A nation of thousands of tropical islands."},
+    {"word":"CHILE","clue":"A long, thin country along South America's Pacific coast."}
+  ]},
+  "animals": {"label":"Animals","sub":"Creatures great, small, and strange.","icon":"🐾","words":[
+    {"word":"ELEPHANT","clue":"The largest land animal, with a long trunk."},
+    {"word":"GIRAFFE","clue":"The tallest animal, known for its long neck."},
+    {"word":"PENGUIN","clue":"A flightless bird that loves icy water."},
+    {"word":"KANGAROO","clue":"An Australian animal that hops and has a pouch."},
+    {"word":"DOLPHIN","clue":"A playful, intelligent sea mammal."},
+    {"word":"OCTOPUS","clue":"A sea creature with eight arms."},
+    {"word":"CHEETAH","clue":"The fastest land animal on Earth."},
+    {"word":"FLAMINGO","clue":"A pink bird that often stands on one leg."},
+    {"word":"CHAMELEON","clue":"A lizard that can change its color."},
+    {"word":"HEDGEHOG","clue":"A small spiky mammal that curls into a ball."},
+    {"word":"PEACOCK","clue":"A bird famous for its colorful tail feathers."},
+    {"word":"JELLYFISH","clue":"A see-through sea creature with a sting."},
+    {"word":"ARMADILLO","clue":"A mammal covered in a hard, armor-like shell."},
+    {"word":"TOUCAN","clue":"A tropical bird with a huge, colorful beak."},
+    {"word":"PLATYPUS","clue":"An odd mammal that lays eggs and has a bill."},
+    {"word":"LION","clue":"The big cat known as the king of the jungle."},
+    {"word":"TIGER","clue":"A striped big cat, the largest of the wild cats."},
+    {"word":"ZEBRA","clue":"A horse-like animal with black and white stripes."},
+    {"word":"PANDA","clue":"A black-and-white bear that mostly eats bamboo."},
+    {"word":"KOALA","clue":"An Australian marsupial that eats eucalyptus leaves."},
+    {"word":"SLOTH","clue":"A very slow-moving mammal that hangs in trees."},
+    {"word":"WALRUS","clue":"A large sea mammal with long tusks."},
+    {"word":"NARWHAL","clue":"An Arctic whale with a single long spiral tusk."},
+    {"word":"MEERKAT","clue":"A small African mammal that stands upright to watch for danger."},
+    {"word":"ORANGUTAN","clue":"A large red-haired ape that lives in trees."},
+    {"word":"SEAHORSE","clue":"A tiny fish with a horse-like head."},
+    {"word":"LEMUR","clue":"A primate from Madagascar with a long striped tail."},
+    {"word":"PORCUPINE","clue":"A rodent covered in sharp quills."},
+    {"word":"STARFISH","clue":"A sea creature shaped like a five-pointed star."},
+    {"word":"CAPYBARA","clue":"The world's largest rodent, at home by the water."}
+  ]},
+  "chapter29": {"label":"Chapter 29","sub":"Efficiency — this week's vocabulary list.","icon":"⚙️","words":[
+    {"word":"AMIDST","clue":"Surrounded by; in the middle of."},
+    {"word":"TETHER","clue":"A rope or connection that holds something in place; a link."},
+    {"word":"DESPERATE","clue":"Extremely serious or urgent."},
+    {"word":"ECONOMY","clue":"Efficient use with no waste (as in \"lightning economy\")."},
+    {"word":"ESCAPEMENT","clue":"A mechanism inside a clock that controls movement."},
+    {"word":"DEBRIS","clue":"Scattered remains or broken pieces."},
+    {"word":"PRECISION","clue":"Exactness and accuracy."},
+    {"word":"ALIGNED","clue":"Arranged correctly or in a straight line; working together."},
+    {"word":"SUSPENDED","clue":"Hanging or temporarily stopped."},
+    {"word":"RESOURCEFULNESS","clue":"The ability to solve problems creatively using available resources."}
+  ]}
+}
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  const AVATARS = [
+    {id:'barista',  role:'The Barista',  note:'always steady' },
+    {id:'regular',  role:'The Regular',  note:'usual, please'},
+    {id:'baker',    role:'The Baker',    note:'up before dawn'},
+    {id:'poet',     role:'The Poet',     note:'writes in margins'},
+    {id:'roaster',  role:'The Roaster',  note:'knows the beans'},
+    {id:'traveler', role:'The Traveler', note:'passing through'}
+  ];
+  AVATARS.forEach(a=>{
+    a.img = `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(a.role)}&backgroundColor=fbf5e4`;
+  });
+
+  const MAX_WRONG = 6;
+  const KROWS = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
+
+  let wordData = null;
+  const state = {
+    avatar: null, categoryKey: null, deck: [], deckIndex: 0,
+    current: null, guessed: new Set(),
+    wrong: 0, score: 0, streak: 0, orderNum: 0
+  };
+
+  // Fisher-Yates shuffle — returns a new shuffled copy, leaves input alone.
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  const $ = (id)=>document.getElementById(id);
+  const showScreen = (id)=>{
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    $(id).classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  };
+
+  // Clone the cup template and rewrite its ids + url(#...) references so
+  // multiple cups on the same page don't collide.
+  let cupSeq = 0;
+  function makeCup(container){
+    const tpl = document.getElementById('cup-template');
+    const svg = tpl.content.firstElementChild.cloneNode(true);
+    const suffix = '-c' + (++cupSeq);
+    svg.querySelectorAll('[id]').forEach(el=>{
+      const oldId = el.id;
+      const newId = oldId + suffix;
+      el.id = newId;
+      const oldRef = 'url(#' + oldId + ')';
+      const newRef = 'url(#' + newId + ')';
+      svg.querySelectorAll('*').forEach(ref=>{
+        ['clip-path','fill','stroke','filter','mask'].forEach(attr=>{
+          if(ref.getAttribute(attr) === oldRef) ref.setAttribute(attr, newRef);
+        });
+      });
+    });
+    container.innerHTML = '';
+    container.appendChild(svg);
+    return svg;
+  }
+
+  function setCupLevel(svg, wrong){
+    const CUP_TOP = 78, CUP_BOTTOM = 200;
+    const total = CUP_BOTTOM - CUP_TOP;
+    const level = Math.min(wrong, MAX_WRONG) / MAX_WRONG;
+
+    const fill = svg.querySelector('.coffee-fill');
+    const foam = svg.querySelector('.coffee-foam');
+    const latte = svg.querySelector('.latte-art');
+    const steamPaths = svg.querySelectorAll('.steam');
+    const drips = svg.querySelectorAll('.drip');
+
+    const coffeeTop = CUP_BOTTOM - (total * level);
+    fill.setAttribute('y', coffeeTop);
+    fill.setAttribute('height', CUP_BOTTOM - coffeeTop + 40);
+    foam.setAttribute('cy', coffeeTop);
+    foam.setAttribute('opacity', level > 0 ? 0.92 : 0);
+
+    const cupRatio = 0.55 + 0.45 * ((coffeeTop - CUP_TOP) / total);
+    foam.setAttribute('rx', 68 * (1 - (1 - cupRatio) * 0.4));
+
+    latte.setAttribute('opacity', wrong >= 5 ? 1 : 0);
+    if(wrong >= 5){
+      latte.querySelectorAll('ellipse').forEach(el =>
+        el.setAttribute('transform', `translate(0, ${coffeeTop - 200})`)
+      );
+    }
+
+    steamPaths.forEach((p, i)=>{
+      if(level > 0 && wrong < MAX_WRONG){
+        p.style.animation = `steam 2.${5-Math.min(i,5)}s ease-in-out infinite`;
+        p.style.animationDelay = `${i * 0.35}s`;
+      } else {
+        p.style.animation = 'none';
+        p.style.opacity = 0;
+      }
+    });
+
+    drips.forEach((d, i)=>{
+      if(wrong >= MAX_WRONG){
+        d.style.animation = `drip 1.6s ${i * 0.15}s ease-out infinite`;
+      } else {
+        d.style.animation = 'none';
+        d.style.opacity = 0;
+      }
+    });
+  }
+
+  function setCupTrembling(container, on){ container.classList.toggle('trembling', on); }
+
+  function buildAvatarGrid(){
+    const grid = $('avatar-grid');
+    grid.innerHTML = '';
+    AVATARS.forEach(av=>{
+      const card = document.createElement('div');
+      card.className = 'avatar-card';
+      card.innerHTML = `
+        <img src="${av.img}" alt="${av.role}" loading="lazy">
+        <p class="role">${av.role}</p>
+        <p class="note">${av.note}</p>
+      `;
+      card.addEventListener('click', ()=>{
+        grid.querySelectorAll('.avatar-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        state.avatar = av;
+        $('btn-avatar-next').disabled = false;
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  function buildCategoryList(){
+    const list = $('cat-list');
+    list.innerHTML = '';
+    Object.keys(wordData).forEach((key, i)=>{
+      const cat = wordData[key];
+      const item = document.createElement('div');
+      item.className = 'menu-item' + (key === 'chapter29' ? ' special' : '');
+      item.innerHTML = `
+        <span class="num">${String(i + 1).padStart(2, '0')}</span>
+        <div class="body">
+          <h3>${cat.label}</h3>
+          <p>${cat.sub}</p>
+        </div>
+        <span class="count">${cat.words.length} words</span>
+      `;
+      item.addEventListener('click', ()=>{
+        state.categoryKey = key;
+        state.deck = shuffle(wordData[key].words);
+        state.deckIndex = 0;
+        startRound();
+      });
+      list.appendChild(item);
+    });
+    const d = new Date();
+    $('menu-date').textContent = d.toLocaleDateString(undefined, { month:'long', day:'numeric' });
+  }
+
+  function buildKeyboard(){
+    const kb = $('keyboard');
+    kb.innerHTML = '';
+    KROWS.forEach(row=>{
+      const rowEl = document.createElement('div');
+      rowEl.className = 'krow';
+      row.split('').forEach(letter=>{
+        const btn = document.createElement('button');
+        btn.className = 'key';
+        btn.textContent = letter;
+        btn.dataset.letter = letter;
+        btn.addEventListener('click', ()=> guessLetter(letter));
+        rowEl.appendChild(btn);
+      });
+      kb.appendChild(rowEl);
+    });
+  }
+
+  function pickWord(){
+    if(state.deckIndex >= state.deck.length){
+      // Deck ran out — reshuffle so the next pass isn't identical.
+      state.deck = shuffle(wordData[state.categoryKey].words);
+      state.deckIndex = 0;
+    }
+    return state.deck[state.deckIndex++];
+  }
+
+  function startRound(){
+    state.current = pickWord();
+    state.guessed = new Set();
+    state.wrong = 0;
+    state.orderNum += 1;
+
+    $('r-order').textContent = String(state.orderNum).padStart(3, '0');
+    $('r-player').textContent = state.avatar.role;
+    $('r-menu').textContent = wordData[state.categoryKey].label;
+    $('r-score').textContent = state.score;
+    $('r-streak').textContent = state.streak;
+
+    const cupSvg = makeCup($('cup-wrap'));
+    setCupLevel(cupSvg, 0);
+    setCupTrembling($('cup-wrap'), false);
+
+    $('clue-line').textContent = '— tap “reveal hint” to see the meaning —';
+    $('clue-line').classList.add('hidden');
+
+    $('status').textContent = 'Guess a letter to begin.';
+    $('status').className = 'status';
+
+    buildKeyboard();
+    renderBlanks();
+    showScreen('screen-game');
+  }
+
+  function renderBlanks(justRevealedIdx){
+    const box = $('blanks');
+    box.innerHTML = '';
+    const word = state.current.word;
+    for(let i=0; i<word.length; i++){
+      const ch = word[i];
+      const cell = document.createElement('div');
+      const isSpace = ch === ' ';
+      const revealed = state.guessed.has(ch) || isSpace;
+      cell.className = 'letter' + (revealed ? '' : ' blank') + (isSpace ? ' space' : '');
+      cell.textContent = revealed ? ch : '_';
+      if(i === justRevealedIdx) cell.classList.add('revealed');
+      box.appendChild(cell);
+    }
+  }
+
+  function wordSolved(){
+    return state.current.word.split('').every(ch => ch === ' ' || state.guessed.has(ch));
+  }
+
+  function bumpScore(){
+    const el = $('r-score');
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  function guessLetter(letter){
+    if(state.guessed.has(letter)) return;
+    const btn = document.querySelector(`.key[data-letter="${letter}"]`);
+    if(btn && btn.disabled) return;
+
+    state.guessed.add(letter);
+    if(btn) btn.disabled = true;
+
+    const word = state.current.word;
+    if(word.includes(letter)){
+      if(btn) btn.classList.add('correct');
+      renderBlanks(word.indexOf(letter));
+      $('status').textContent = 'Good pick.';
+      $('status').className = 'status good';
+
+      if(wordSolved()){
+        state.score += 1;
+        state.streak += 1;
+        $('r-score').textContent = state.score;
+        $('r-streak').textContent = state.streak;
+        bumpScore();
+        setTimeout(()=> endRound(true), 420);
+      }
+    } else {
+      if(btn) btn.classList.add('wrong');
+      state.wrong += 1;
+      const svg = $('cup-wrap').querySelector('svg');
+      setCupLevel(svg, state.wrong);
+      setCupTrembling($('cup-wrap'), state.wrong >= 5 && state.wrong < MAX_WRONG);
+
+      const left = MAX_WRONG - state.wrong;
+      $('status').textContent = left > 0
+        ? `Not on the menu. ${left} pour${left === 1 ? '' : 's'} to go.`
+        : 'The cup overflowed.';
+      $('status').className = 'status bad';
+
+      if(state.wrong >= MAX_WRONG){
+        state.streak = 0;
+        $('r-streak').textContent = state.streak;
+        setTimeout(()=> endRound(false), 500);
+      }
+    }
+  }
+
+  function endRound(win){
+    if(win){
+      $('ov-mark').textContent = 'A';
+      $('ov-mark').style.background = 'var(--matcha)';
+      $('ov-title').textContent = 'Order up!';
+      $('ov-title').className = 'overlay-title win';
+      launchBeans();
+    } else {
+      $('ov-mark').textContent = 'X';
+      $('ov-mark').style.background = 'var(--berry)';
+      $('ov-title').textContent = 'The cup overflowed';
+      $('ov-title').className = 'overlay-title lose';
+      setCupTrembling($('cup-wrap'), false);
+    }
+    $('ov-word').textContent = state.current.word;
+    $('ov-ex').textContent = state.current.clue;
+    $('overlay').classList.add('active');
+  }
+
+  function launchBeans(){
+    for(let i=0; i<34; i++){
+      const b = document.createElement('div');
+      b.className = 'bean';
+      b.style.left = Math.random()*100 + 'vw';
+      b.style.animationDuration = (1.4 + Math.random()*1.6) + 's';
+      b.style.transform = `rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(b);
+      b.addEventListener('animationend', ()=> b.remove());
+    }
+  }
+
+  // events
+  $('btn-start').addEventListener('click', ()=>{
+    buildAvatarGrid();
+    showScreen('screen-avatar');
+  });
+  $('btn-avatar-back').addEventListener('click', ()=> showScreen('screen-start'));
+  $('btn-avatar-next').addEventListener('click', ()=>{
+    buildCategoryList();
+    showScreen('screen-category');
+  });
+  $('btn-cat-back').addEventListener('click', ()=> showScreen('screen-avatar'));
+  $('btn-hint').addEventListener('click', ()=>{
+    const line = $('clue-line');
+    line.textContent = state.current.clue;
+    line.classList.remove('hidden');
+  });
+  $('btn-restart-run').addEventListener('click', ()=>{
+    state.score = 0; state.streak = 0; state.orderNum = 0;
+    showScreen('screen-start');
+  });
+  $('btn-next-word').addEventListener('click', ()=>{
+    $('overlay').classList.remove('active');
+    startRound();
+  });
+  $('btn-change-cat').addEventListener('click', ()=>{
+    $('overlay').classList.remove('active');
+    buildCategoryList();
+    showScreen('screen-category');
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(!$('screen-game').classList.contains('active')) return;
+    if($('overlay').classList.contains('active')) return;
+    const letter = e.key.toUpperCase();
+    if(letter.length === 1 && letter >= 'A' && letter <= 'Z') guessLetter(letter);
+  });
+
+  // hero cup — half full and steaming
+  const heroSvg = makeCup($('hero-cup'));
+  setCupLevel(heroSvg, 3);
+
+  // load words: try the JSON, fall back to the inline list if blocked
+  fetch('words.json')
+    .then(r=>{ if(!r.ok) throw new Error('bad response'); return r.json(); })
+    .then(data=>{ wordData = data; })
+    .catch(()=>{
+      wordData = JSON.parse(document.getElementById('fallback-json').textContent);
+    });
+
+})();
+</script>
+
+</body>
+</html>
