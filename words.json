@@ -170,12 +170,62 @@
       {"word":"ADAPT","clue":"To change your approach to deal with a new situation."},
       {"word":"CREATIVITY","clue":"The ability to think of new and useful ideas."},
       {"word":"IMPROVISE","clue":"To create a solution using what is available."},
-      {"word":"UTILIZE","clue":"To use something effectively."},
-      {"word":"SOLUTION","clue":"An answer to a problem."},
+      {"word":"UTILIZE","clue":"To use something effectively."},{"word":"SOLUTION","clue":"An answer to a problem."},
       {"word":"FLEXIBLE","clue":"Able to change easily when circumstances change."},
       {"word":"INGENUITY","clue":"Cleverness in creating or solving something."},
       {"word":"PERSISTENCE","clue":"Continuing to try despite difficulties."},
       {"word":"LEVERAGE","clue":"To use something to achieve a better result."}
+    ]
+  },
+  "chapter33": {
+    "label": "Chapter 33",
+    "sub": "Words about negotiation and reaching agreements.",
+    "icon": "🤝",
+    "words": [
+      {"word":"NEGOTIATE","clue":"To discuss something to reach an agreement."},
+      {"word":"AGREEMENT","clue":"A decision or arrangement accepted by everyone."},
+      {"word":"COMPROMISE","clue":"An agreement where everyone gives up something."},
+      {"word":"PERSUADE","clue":"To convince someone to agree with you."},
+      {"word":"COMMUNICATE","clue":"To share ideas or information clearly."},
+      {"word":"LISTEN","clue":"To pay attention to what someone is saying."},
+      {"word":"DEMAND","clue":"Something that someone strongly asks for."},
+      {"word":"OFFER","clue":"Something you propose to give or do."},
+      {"word":"FAIR","clue":"Treating everyone equally and reasonably."},
+      {"word":"COOPERATE","clue":"To work together toward a shared goal."}
+    ]
+  },
+  "chapter34": {
+    "label": "Chapter 34",
+    "sub": "Words about adapting, creating, and finding opportunities.",
+    "icon": "💡",
+    "words": [
+      {"word":"ADAPT","clue":"To change your approach when a situation changes."},
+      {"word":"IMPROVISE","clue":"To create a solution using whatever is available."},
+      {"word":"CREATIVITY","clue":"The ability to think of new and useful ideas."},
+      {"word":"UTILIZE","clue":"To use something effectively for a purpose."},
+      {"word":"SOLUTION","clue":"An answer or way to solve a problem."},
+      {"word":"FLEXIBLE","clue":"Able to change plans when necessary."},
+      {"word":"EFFICIENT","clue":"Using time, energy, or resources wisely."},
+      {"word":"INVENTIVE","clue":"Good at creating new and clever ideas."},
+      {"word":"RESOURCE","clue":"Something useful that can help you achieve a goal."},
+      {"word":"OPPORTUNITY","clue":"A situation that gives you a chance to do or create something useful."}
+    ]
+  },
+  "chapter35": {
+    "label": "Chapter 35",
+    "sub": "Words about guiding and facilitating a group.",
+    "icon": "🧭",
+    "words": [
+      {"word":"GUIDE","clue":"To help a group move toward a goal."},
+      {"word":"LISTEN","clue":"To pay attention to what someone is saying."},
+      {"word":"ENCOURAGE","clue":"To give someone confidence to participate."},
+      {"word":"COMMUNICATE","clue":"To share information or ideas clearly."},
+      {"word":"COLLABORATE","clue":"To work together with others."},
+      {"word":"PARTICIPATE","clue":"To take part in an activity or discussion."},
+      {"word":"DISCUSS","clue":"To talk about something and share ideas."},
+      {"word":"ORGANIZE","clue":"To arrange people or activities in a clear way."},
+      {"word":"MEDIATE","clue":"To help people solve a disagreement."},
+      {"word":"FEEDBACK","clue":"Helpful comments about how something can improve."}
     ]
   }
 }
