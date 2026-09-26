@@ -227,5 +227,44 @@
       {"word":"MEDIATE","clue":"To help people solve a disagreement."},
       {"word":"FEEDBACK","clue":"Helpful comments about how something can improve."}
     ]
+  },
+    "chapter36": {
+    "label": "Chapter 36",
+    "sub": "Words about commitment, responsibility, and staying dedicated to a goal.",
+    "icon": "🎯",
+    "words": [
+      {"word":"DEDICATED","clue":"Giving your time and effort to something."},
+      {"word":"RESPONSIBLE","clue":"Being trusted to complete a task."},
+      {"word":"DETERMINED","clue":"Not giving up easily."},
+      {"word":"RELIABLE","clue":"Someone others can depend on."},
+      {"word":"FOCUSED","clue":"Giving full attention to a task."},
+      {"word":"PERSISTENT","clue":"Continuing even when something is difficult."},
+      {"word":"DEVOTED","clue":"Giving a lot of effort and attention."},
+      {"word":"ACCOUNTABLE","clue":"Taking responsibility for your actions."},
+      {"word":"CONSISTENT","clue":"Continuing to put in effort regularly."},
+      {"word":"COMMITTED","clue":"Being dedicated to achieving a goal."},
+      {"word":"SOLUTION","clue":"An answer to a problem."},
+      {"word":"FLEXIBLE","clue":"Able to change easily when circumstances change."},
+      {"word":"INGENUITY","clue":"Cleverness in creating or solving something."},
+      {"word":"PERSISTENCE","clue":"Continuing to try despite difficulties."},
+      {"word":"LEVERAGE","clue":"To use something to achieve a better result."}
+    ]
+  },
+  "chapter37": {
+    "label": "Chapter 37",
+    "sub": "Words about conflict resolution and solving disagreements.",
+    "icon": "🕊️",
+    "words": [
+      {"word":"RESOLVE","clue":"To solve a disagreement or problem."},
+      {"word":"CONFLICT","clue":"A disagreement or serious difference between people."},
+      {"word":"MEDIATE","clue":"To help people reach an agreement during a disagreement."},
+      {"word":"EMPATHY","clue":"The ability to understand how someone else feels."},
+      {"word":"CALM","clue":"Not being angry or upset during a difficult situation."},
+      {"word":"UNDERSTAND","clue":"To recognize and know why someone thinks or feels a certain way."},
+      {"word":"DISCUSS","clue":"To talk about a problem and share different ideas."},
+      {"word":"RECONCILE","clue":"To restore a friendly relationship after a disagreement."},
+      {"word":"RESPECT","clue":"To consider someone else's feelings, ideas, and opinions."},
+      {"word":"COOPERATE","clue":"To work together to solve a problem or reach a shared goal."}
+    ]
   }
 }
